@@ -1,0 +1,28 @@
+Funciones
+
+ERC20Basic
+balanceOf - Saldo del contrato
+transfer - Enviar tokens a un contrato (address to, uint256 value) returns (bool)
+  Implemented in BasicToken.sol
+
+ERC20
+allowance
+transferFrom - Enviar tokens de un contrato a otro (address _from, address _to, uint256 _value) returns bool
+approve
+  Implemented in StandardToken.sol
+
+MintableToken
+mint - Crear mas moneda y asignarla a un monedero
+finishMinting - Regresa true si ya termino de generar mas moneda
+
+
+Eventos
+ERC20Basic
+Transfer - Evento que se dispara al ejecutar el transfer
+ERC20
+Approbal - Evento que se dispara al ejecutar el approve
+MintableToken
+FinishMinting - Evento que se dispara al terminar el proceso de generacion de dinero
+Mint - Evento que se dispara al iniciar el proceso de generacion de dinero
+
+
