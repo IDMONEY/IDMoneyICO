@@ -18,7 +18,6 @@ contract MintableToken is StandardToken, Ownable {
 
   bool public mintingFinished = false;
 
-
   modifier canMint() {
     require(!mintingFinished);
     _;
