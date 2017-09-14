@@ -6,28 +6,73 @@ pragma solidity ^0.4.11;
  * Moneda base de IDPay para moneda aprobada por ID paises.
  */
 
-import './token/MintableToken.sol';
-import './crowdsale/CappedCrowdSale.sol';
+import './token/StandardToken.sol';
 
-contract IDMoney is MintableToken {
+contract IDMoney is StandardToken {
   string public name = "IDMONEY";
   string public symbol = "IDM";
   uint256 public decimals = 18; 
-}
 
-contract IDMCrowdsale is CappedCrowdsale {
+  address public owner;
 
-  function IDMCrowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, uint256 _goal, uint256 _cap, address _wallet)
-    CappedCrowdsale(_cap)
-    Crowdsale(_startTime, _endTime, _rate, _wallet)
-  {
-    //As goal needs to be met for a successful crowdsale
-    //the value needs to less or equal than a cap which is limit for accepted funds
-    require(_goal <= _cap);
+  /**
+   * @dev Al contruir la moneda se guardar la direccion del owner
+   */
+  function IDMoney() {
+    owner = msg.sender;
   }
 
-  function createTokenContract() internal returns (IDMoney) {
-    return new IDMoney();
+  /**
+   * @dev Modificador que chequea si la funcion la esta ejecutando el owner
+   */
+  modifier onlyOwner() {
+    require(msg.sender == owner);
+    _;
+  }
+
+  /**
+   * @dev Permite al owner actual transferir el control a otro owner
+   * @param newOwner La direccion a la cual se transfiere el control.
+   */
+  function transferOwnership(address newOwner) onlyOwner {
+    if (newOwner != address(0)) {
+      owner = newOwner;
+    }
+  }
+
+  /** Eventos relacionados con la creacion de moneda IDM adicional */
+  event Mint(address indexed to, uint256 amount);
+  event MintFinished();
+
+  bool public mintingFinished = false;
+  
+  /** Modificador que especifica si se puede crear nueva moneda */
+  modifier canMint() {
+    require(!mintingFinished);
+    _;
+  }
+
+  /**
+   * @dev Funcion para crear nuevos tokens
+   * @param _to La direccion que recibira nuevos tokens.
+   * @param _amount La cantidad de tokens a generar.
+   * @return Boolean que indica si la operacion fue exitosa.
+   */
+  function mint(address _to, uint256 _amount) onlyOwner canMint returns (bool) {
+    totalSupply = totalSupply.add(_amount);
+    balances[_to] = balances[_to].add(_amount);
+    Mint(_to, _amount);
+    return true;
+  }
+
+  /**
+   * @dev Function to stop minting new tokens.
+   * @return True if the operation was successful.
+   */
+  function finishMinting() onlyOwner returns (bool) {
+    mintingFinished = true;
+    MintFinished();
+    return true;
   }
 
 }
