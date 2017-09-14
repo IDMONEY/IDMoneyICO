@@ -8,10 +8,12 @@ pragma solidity ^0.4.11;
 
 /** 
 Etapas: 
-Pre-ICO : Definir el como aceptar contribuiones en este punto y con cual tipo de cambio
-Durante ICO : Aqui el acceso es abierto, definir el tipo de cambio que puede ser distinto
+Larvae : Inversores VIP, el tipo de cambio se acepta en forma manual como deposito en ETH en cuenta de owner.
+         El owner se encargara de enviar el IDM 
+Pre-ICO : Se aceptan directamente al contrato con un 70% de descuento
+Durante ICO : Aqui el acceso es abierto, NO hay descuento
 Post-ICO : No se aceptan contribuciones, solamente puede haber Minting. Es probable cerrar minting para siempre.
- */
+*/
 
 import './token/StandardToken.sol';
 
