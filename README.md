@@ -7,6 +7,12 @@ En este repositorio se guardaran los archivos e instrucciones necesarias para el
 * Archivos de los Smart Contracts de IDMoney para ser instalados en Ethereum
 * 1.0
 
+### Etapas del ICO ###
+1. Etapa Larvae: El contrato está instalado en la red Ethereum pero no se pueden comprar tokens en forma directa. Para comprar tokens se debe hacer directamente con el founder. El founder recibe el deposito, mina los tokens y los envia a la direccion del comprador. El tipo de cambio queda a definicion del founder.
+2. Etapa Pre-ICO: Se aceptan pagos directos al contrato. Tipo de Cambio: 7000x1 (7000 IDM x 1 ETH).
+3. Etapa ICO: Se aceptan pagos directos al contrato. Tipo de Cambio: 10000x1 (10000 IDM x 1 ETH).
+4. Post-ICO: No se aceptan pagos directos. Si se puede hacer minting si hay necesidad. También puede cerrarse la posibilidad de hacer minting desde la cuenta del fundador.
+
 ### Dependencias ###
 
 * Este ambiente esta pensado para ser bajado por Git en cualquier computadora de alquien que tenga acceso. 
