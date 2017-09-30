@@ -1,0 +1,24 @@
+{
+  "name": "idmoneyico",
+  "version": "1.0.0",
+  "description": "ICO IDM files",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "web3": "^1.0.0-beta.21",
+    "zeppelin-solidity": "^1.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://luiseduardonarvaez@bitbucket.org/idmoney/idmoneyico.git"
+  },
+  "author": "Eduardo Narvaez",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/idmoney/idmoneyico#readme"
+}
