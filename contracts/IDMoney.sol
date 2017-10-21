@@ -43,7 +43,7 @@ contract IDMoney is StandardToken {
   /**
    * @dev Al contruir la moneda se guardar la direccion del owner
    */
-  function IDMoney() {
+  function IDMoney() public {
     // owner es el creador
     owner = msg.sender;
     // Entramos en estado Larva (VIP antes de PreICO)
@@ -88,7 +88,7 @@ contract IDMoney is StandardToken {
    *      Solo se puede pasar si todavia esta en estado Larvae
    * @param newOwner La direccion a la cual se transfiere el control.
    */
-  function transferOwnership(address newOwner) onlyOwner isLarvae {
+  function transferOwnership(address newOwner) onlyOwner isLarvae public {
     if (newOwner != address(0)) {
       owner = newOwner;
     }
@@ -98,7 +98,7 @@ contract IDMoney is StandardToken {
    * @dev Permite al owner actual ponerse en estado PreICO
    *      Solo se puede pasar si todavia esta en estado Larvae
    */
-  function beginPreICO() onlyOwner isLarvae {
+  function beginPreICO() onlyOwner isLarvae public {
     // Entrar en estado PreICO
     state = ContractState.PreICO;
   }
@@ -107,7 +107,7 @@ contract IDMoney is StandardToken {
    * @dev Permite al owner actual ponerse en estado ICO
    *      Solo se puede pasar si todavia esta en estado PreICO
    */
-  function beginICO() onlyOwner isPreICO {
+  function beginICO() onlyOwner isPreICO public {
     // Entrar en estado ICO
     state = ContractState.ICO;
   }
@@ -116,7 +116,7 @@ contract IDMoney is StandardToken {
    * @dev Permite al owner actual ponerse en estado PostICO
    *      Solo se puede pasar si todavia esta en estado ICO
    */
-  function endICO() onlyOwner isICO {
+  function endICO() onlyOwner isICO public {
     // Entrar en estado PostICO
     state = ContractState.PostICO;
   }
@@ -157,7 +157,7 @@ contract IDMoney is StandardToken {
    * @param _amount La cantidad de tokens a generar.
    * @return Boolean que indica si la operacion fue exitosa.
    */
-  function mint(address _to, uint256 _amount) onlyOwner canMint returns (bool) {
+  function mint(address _to, uint256 _amount) onlyOwner canMint public returns (bool) {
     require(_amount >= 1);  // El monto a generar debe ser mayor o igual a 1
     doMint(_to, _amount);
     return true;
@@ -167,7 +167,7 @@ contract IDMoney is StandardToken {
    * @dev Function to stop minting new tokens.
    * @return True if the operation was successful.
    */
-  function finishMinting() onlyOwner returns (bool) {
+  function finishMinting() onlyOwner public returns (bool) {
     mintingFinished = true;
     MintFinished();
     return true;
@@ -193,11 +193,11 @@ contract IDMoney is StandardToken {
    * @dev Funcion que revive ETH directamente pero solamente si esta en el estado correcto.
    * @return True si la operacion fue correcta.
    */
-  function () isFundraising payable {
+  function () isFundraising payable public {
     require(msg.value > 0);  // El monto de ETH debe ser mayor que 0
     require(msg.value > ETH_RECEIVED_MIN);  // El monto de ETH debe ser mayor que el minimo definido
 
-    // aca hay que tomar los eth (msg.value) y distribuirlos.
+    // aca hay que tomar los eth (msg.value) y distribuirlos. address.send(msg.value)
     uint256 tokreceive = getCurrentTokenPrice() * msg.value; // Calcula el total de tokens a generar
     doMint(owner,tokreceive); // Agrega tokens a billetera de dueno.
     transferFrom(owner, msg.sender, tokreceive); // Envia tokens desde el dueno al inversor.
