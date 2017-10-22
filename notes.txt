@@ -1,3 +1,10 @@
+To-do
+Cambiar los eventos para dejar solamente 2, en ICO, sin ICO (recibiendo fondos o no)
+Crear un vector para guardar los inversionistas y chequear contra ese vector al recibir un pago
+para asi crear seguridad en la inversionistas
+El ICO debe soportar un CAP (monto maximo de inversion total) y si es posible una fecha de termino para 
+el ICO
+
 Funciones
 
 ERC20Basic
