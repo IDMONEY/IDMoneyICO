@@ -33,7 +33,8 @@ contract IDMoney is StandardToken {
 
   // Variables de Control
   uint256 public ethReceived;           // ETH Recibidos en el ICO
-  address[] public ethInvestors;        // Control que se lleva de inversionistas 
+  address[] private ethInvestors;       // Lista de inversionistas 
+  uint256[] private ethInvestorstotal;  // Lista de inversiones
   
 
   // Direcciones para depositar los ETH. Definirlas o hacer una func para asignarlas
@@ -128,6 +129,10 @@ contract IDMoney is StandardToken {
   event MintFinished();
 
   bool public mintingFinished = false;
+
+  /** Evento relacionado con una inversion
+  */
+  event AddInvestor(address indexed investor, uint256 amount);
   
   /** Modificador que especifica si se puede crear nueva moneda 
   */
@@ -173,12 +178,24 @@ contract IDMoney is StandardToken {
 
   /**
    * @dev Funcion que graba la direccion de un inversionista en el vector.
-   * @return El precio del token IDM por cada 1 ETH
+   *      Lo agrega si no esta y si esta suma al monto ya existente
+   * @return true si pudo agregar al inversionista
    */
-  function addICOInvestor(address _to) public returns (bool) {
-    // Agregue la direccion en el vector de inversionistas
-    ethInvestors.push(_to);    
-    return true;
+  function addICOInvestor(address _to, uint256 amount) private returns (bool) {
+    uint256 index;
+    // Revisar si esta en el vector
+    index = findaddress(ethInvestors, _to);
+    if (index < 999999) {
+      // Esta, entonces sume el monto y ya.
+      ethInvestorstotal[index] = ethInvestorstotal[index] + amount;
+      return true;  
+    } else {
+      // Agregue la direccion en el vector de inversionistas
+      ethInvestors.push(_to);    
+      // Agregue la inversion inicial en el vector de montos
+      ethInvestorstotal.push(amount);
+      return true;
+    }
   }
 
   /**
@@ -189,24 +206,17 @@ contract IDMoney is StandardToken {
     return tokenETHExchange;
   }
 
-  /// 
-  /// requires { arg_data.length < UInt256.max_uint256 }
-  /// requires { 0 <= to_int arg_begin <= to_int arg_end <= arg_data.length }
-  /// requires { forall i j: int. 0 <= i <= j < arg_data.length -> to_int arg_data[i] <= to_int arg_data[j] }
-  /// variant { to_int arg_end - to_int arg_begin }
-  /// ensures {
-  ///   to_int result < UInt256.max_uint256 -> (to_int arg_begin <= to_int result < to_int arg_end && to_int arg_data[to_int result] = to_int arg_value)
-  /// }
-  /// ensures {
-  ///   to_int result = UInt256.max_uint256 -> (forall i: int. to_int arg_begin <= i < to_int arg_end -> to_int arg_data[i] <> to_int arg_value)
-  /// }
-  function findinternal(uint[] data, uint begin, uint end, uint value) internal returns (uint ret) {
+  /**
+   * @dev Funcion de busqueda binaria de una direcion.
+   * @return Indice donde esta la direccion
+   */
+  function findinternal(address[] data, uint begin, uint end, address value) internal returns (uint ret) {
     uint len = end - begin;
     if (len == 0 || (len == 1 && data[begin] != value)) {
-      return 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+      return 999999;
     }
     uint mid = begin + len / 2;
-    uint v = data[mid];
+    address v = data[mid];
     if (value < v)
       return findinternal(data, begin, mid, value);
     else if (value > v)
@@ -215,16 +225,11 @@ contract IDMoney is StandardToken {
       return mid;
   }
 
-  ///
-  /// requires { arg_data.length < UInt256.max_uint256 }
-  /// requires { forall i j: int. 0 <= i <= j < arg_data.length -> to_int arg_data[i] <= to_int arg_data[j] }
-  /// ensures {
-  ///   to_int result < UInt256.max_uint256 -> to_int arg_data[to_int result] = to_int arg_value
-  /// }
-  /// ensures {
-  ///   to_int result = UInt256.max_uint256 -> forall i: int. 0 <= i < arg_data.length -> to_int arg_data[i] <> to_int arg_value
-  /// }
-  function find(uint[] data, uint value) internal returns (uint ret) {
+  /**
+   * @dev Funcion que usa busqueda binaria y devuelve indice
+   * @return Indice donde esta la direccion
+   */
+  function findaddress(address[] data, address value) internal returns (uint ret) {
     return findinternal(data, 0, data.length, value);
   }
 
@@ -245,6 +250,9 @@ contract IDMoney is StandardToken {
     doMint(owner,tokreceive); // Agrega tokens a billetera de dueno.
     transferFrom(owner, msg.sender, tokreceive); // Envia tokens desde el dueno al inversor.
     ethReceived = ethReceived + msg.value;  // Sumar los ETH en la variable de control
+    addICOInvestor(msg.sender, msg.value);  // Agregarlo en el vector de inversionistas
+    // Trigger del evento
+    AddInvestor(msg.sender, msg.value);    
   }
 
 }
