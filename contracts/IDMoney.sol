@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.18;
 /**
  * @title IDMoney
  * @dev Mintable ERC20 Token 
@@ -228,7 +228,7 @@ contract IDMoney is StandardToken {
    * @dev Funcion que devuelve el precio de los IDM de acuerdo a la etapa del ICO.
    * @return El precio del token IDM por cada 1 ETH
    */
-  function getCurrentTokenPrice() private view returns (uint256 currentPrice) {
+  function getCurrentTokenPrice() private returns (uint256 currentPrice) {
     return tokenETHExchange;
   }
 
