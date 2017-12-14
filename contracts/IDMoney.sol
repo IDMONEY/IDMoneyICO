@@ -3,13 +3,13 @@ pragma solidity ^0.4.18;
  * @title IDMoney
  * @dev Mintable ERC20 Token 
  * Based on code by TokenMarketNet: https://github.com/TokenMarketNet/ico/blob/master/contracts/MintableToken.sol
- * Moneda base de IDPay para moneda aprobada por ID paises.
+ * IDPAY (id based crypto currency).
  */
 
 /** 
-Etapas: 
-NotICO : No se aceptan inversiones
-ICO : Se aceptan inversiones
+Stages: 
+NotICO : ICO not active
+ICO : ICO active
 */
 
 import './token/StandardToken.sol';
@@ -17,47 +17,47 @@ import './token/StandardToken.sol';
 contract IDMoney is StandardToken {
   using SafeMath for uint256;
 
-  // Variables publicas para estandar ERC20
+  // public variables for ERC20 standard
   string public name = "IDMONEY";
   string public symbol = "IDM";
   uint256 public decimals = 18; 
   uint256 public unit1 = 1;
 
-  // Se define la minima inversion definida
-  uint256 public constant ETH_RECEIVED_MIN = 1; // Minima cantidad de ETH a recibir como inversion
+  // Min ETH amount to invest
+  uint256 public constant ETH_RECEIVED_MIN = 1; 
 
-  // Parametros para manejo de ICO
+  // ICO handling parameters
   enum ContractState { ICO, NotICO }
-  uint256 public tokenETHExchange = 0;  // No tenemos tipo de cambio
-  ContractState public state;           // Estado del contrato y token
-  uint256 public cap;                   // Maximo del ICO actual
+  uint256 public tokenETHExchange = 0;  // default: exchange is zero.
+  ContractState public state;           // State of the contract
+  uint256 public cap;                   // cap of ICO if in ICO State
 
   // Variables para guardar datos de ICO
-  uint256 public ethReceived;           // ETH Recibidos en el ICO
-  address[] private ethInvestors;       // Lista de inversionistas 
-  uint256[] private ethInvestorstotal;  // Lista de inversiones
+  uint256 public ethReceived;           // ETH received in ICO
+  address[] private ethInvestors;       // Inversors List 
+  uint256[] private ethInvestorstotal;  // Investment List
   
-  // Direcciones para depositar los ETH. Definirlas o hacer una func para asignarlas
-  // Todavia no se usan
-  address public ethFundIandD;     /** Cuenta para I&D */
-  address public ethFundFounders;  /** Cuenta para Fundadores */
-  address public ethFundEscrow;    /** Cuenta para Fideicomiso Escrow */
-  address public ethFundMain;      /** Cuenta / Resto */
+  // Addresses for ETH deposit. 
+  // Still not to be used.
+  address public ethFundIandD;     /** I&D Wallet */
+  address public ethFundFounders;  /** Founders Wallet */
+  address public ethFundEscrow;    /** Fund Escrow Wallet */
+  address public ethFundMain;      /** Account / The rest */
 
   address public owner;
   
   /**
-   * @dev Al contruir la moneda se guardar la direccion del owner
+   * @dev When creating the currency the owner address is saved from the deployment address
    */
   function IDMoney() public {
-    // owner es el creador
+    // owner is the creator
     owner = msg.sender;
-    // Entramos en estado NotICO
+    // Entering NotICO state
     state = ContractState.NotICO;
   }
 
   /**
-   * @dev Modificador que chequea si la funcion la esta ejecutando el owner
+   * @dev Modifier that checks if the function is being executed by the owner
    */
   modifier onlyOwner() {
     require(msg.sender == owner);
@@ -65,7 +65,7 @@ contract IDMoney is StandardToken {
   }
 
   /**
-   * @dev Modificador que indica si estamos en un proceso de recepcion de fondos (ICO)
+   * @dev Modifier that checks if we are in ICO state
    */
   modifier isICO() {
     require(state == ContractState.ICO);
@@ -73,7 +73,7 @@ contract IDMoney is StandardToken {
   }
 
   /**
-   * @dev Modificador que indica si NO estamos en un proceso de recepcion de fondos (ICO)
+   * @dev Modifier that checks if we are in NotICO state
    */
   modifier isNotICO() {
     require(state == ContractState.NotICO);
@@ -81,97 +81,103 @@ contract IDMoney is StandardToken {
   }
 
   /**
-   * @dev Permite al owner actual transferir el control a otro owner
-   *      Solo se puede pasar si no esta recibiendo fontos y es el owner quien ejecuta la funcion
-   * @param newOwner La direccion a la cual se transfiere el control.
+   * @dev Allows the current owner to transfer ownership to a different address
+   *      It can only be executed when the owner is doing it and we are in NotICO state
+   * @param newOwner Address which receives the ownership.
    */
   function transferOwnership(address newOwner) onlyOwner isNotICO public {
     if (newOwner != address(0)) {
       owner = newOwner;
     }
   }
-
+ 
+  /* ICO Events */
   event ICOstarted(uint256 ethexchange, uint256 capICO);
   event ICOended();
 
   /**
-   * @dev Permite al owner actual ponerse en estado ICO
-   *      Solo se puede pasar si todavia esta en estado PreICO
-   * @param ethexchange tipo de cambio con ETH de IDM para ese ICO. Ej:100 significa 100 IDM por 1 ETH
-   * @param capICO maxima cantidad de ETH que vamos a aceptar en este ICO.
+   * @dev Put the contract in the ICO state
+   *      It can only be executed if the contract is in NotICO state
+   *      It can only be executed by the owner
+   * @param ethexchange exchage rate ETH>IDC for this ICO. Ex:100 means 100 IDM for 1 ETH
+   * @param capICO max amount of ETH to be accepted in this ICO.
    */
   function beginICO(uint256 ethexchange, uint256 capICO) onlyOwner isNotICO public {
-    // El tipo de cambio debe ser mayor a 1
+    // Exchange rate must be more than 1
     require(ethexchange > 1);
     require(capICO > 0);
-    // Entrar en estado ICO
+    // Change contract state to ICO
     state = ContractState.ICO;
-    // Asignar el cap del ICO definido
+    // Asign cap amount to this ICO
     cap = capICO;
-    // Asignar el tipo de cambio
+    // Asign exchange rate
     tokenETHExchange = ethexchange;
-    // Reset a los ETH recibidos
+    // Reset ETH received
     ethReceived = 0;
-    // Limpiar vectores de inversionistas
-    ethInvestors = new address[](0);       // Lista de inversionistas 
-    ethInvestorstotal = new uint[](0);    // Lista de inversiones
-    // Genera el evento de que iniciamos un ICO
+    // Clear investments and investors arrays
+    ethInvestors = new address[](0);
+    ethInvestorstotal = new uint[](0);
+    // Generate ICOstarted event
     ICOstarted(ethexchange, capICO);
   }
 
   /**
-   * @dev Permite al owner actual ponerse en estado sin funding
-   *      Solo se puede pasar si todavia esta en estado ICO
+   * @dev End the ICO
+   *      It can only be executed if the contract is in ICO state
+   *      It can only be executed by the owner
    */
   function endICO() onlyOwner isICO public {
-    // Entrar en estado NotICO
+    // Change contract state to NotICO
     state = ContractState.NotICO;
-    // Se deja el tipo de cambio y el maximo de ETH a recibir en cero.
+    // Asign 0 to exchange rate and cap amount.
     tokenETHExchange = 0;
     cap = 0;
-    // No borrar vector de inversionistas para poder revisar su contenido.
-    // Genera el evento de que terminamos el ICO
+    // Investments and investor arrays are not cleared (so we can check them)
+    // Generate ICOended event
     ICOended();
   }
 
   /**
-   * @dev Devuelve el vector de inversionistas aprobados
+   * @dev Returns investors array
+   *      It can only be executed by the owner
    */
   function getInvestorsAddresses() public constant onlyOwner returns (address[] data) {
       return (ethInvestors);
   }
 
   /**
-   * @dev Devuelve el vector de inversiones recibidas (informacion complementaria a inversionistas)
+   * @dev Returns investments array
+   *      It can only be executed by the owner
    */
   function getInvestorsTotal() public constant onlyOwner returns (uint256[] data) {
       return (ethInvestorstotal);
   }
 
-  /** Eventos relacionados con la creacion de moneda IDM adicional 
+  /** Minting Events
   */
   event Mint(address indexed to, uint256 amount);
   event MintFinished();
 
-  // Control de finalizacion de minting que evita generar moneda nueva si se esta en proceso de generacion
+  // Minting ending control to avoid the generation of new currency when minting
   bool public mintingFinished = false;
 
-  /** Evento relacionado con una inversion
+  /** Investment related event
   */
   event AddInvestor(address indexed investor, uint256 amount);
   
-  /** Modificador que especifica si se puede crear nueva moneda 
-  */
+   /**
+   * @dev Modifier that checks if we can Mint new currency
+   */
   modifier canMint() {
     require(!mintingFinished);
     _;
   }
 
   /**
-   * @dev Funcion para efectua minting de tokens para Minting y para el ICO
-   * @param _to La direccion que recibira nuevos tokens.
-   * @param _amount La cantidad de tokens a generar.
-   * @return Boolean que indica si la operacion fue exitosa.
+   * @dev Functions that does token minting for the ICO (private)
+   * @param _to Address that receives the generated tokens
+   * @param _amount Token amount to generate.
+   * @return Boolean signals if operation was successful.
    */
   function doMint(address _to, uint256 _amount) private returns (bool) {
     totalSupply = totalSupply.add(_amount);
@@ -181,19 +187,22 @@ contract IDMoney is StandardToken {
   }
 
   /**
-   * @dev Funcion para crear nuevos tokens
-   * @param _to La direccion que recibira nuevos tokens.
-   * @param _amount La cantidad de tokens a generar.
-   * @return Boolean que indica si la operacion fue exitosa.
+   * @dev Functions that creates new tokens
+   *      It can only be executed if is not minting
+   *      It can only be executed by the owner
+   * @param _to Address that receives the generated tokens.
+   * @param _amount Token amount to generate.
+   * @return Boolean signals if operation was successful.
    */
   function mint(address _to, uint256 _amount) onlyOwner canMint public returns (bool) {
-    require(_amount >= 1);  // El monto a generar debe ser mayor o igual a 1
+    require(_amount >= 1);  // Amount must be more of equal than 1
     doMint(_to, _amount);
     return true;
   }
 
   /**
    * @dev Function to stop minting new tokens.
+   *      It can only be executed by the owner
    * @return True if the operation was successful.
    */
   function finishMinting() onlyOwner public returns (bool) {
@@ -203,8 +212,9 @@ contract IDMoney is StandardToken {
   }
 
   /**
-   * @dev Funcion que graba la direccion de un inversionista en el vector.
-   *      Lo agrega si no esta y si esta suma al monto ya existente
+   * @dev Function that saves an investor address in an array.
+   *      If the investor is already there it adds the corresponding amount
+   *      It can only be executed by the owner
    * @param _to La direccion aprobada que recibira nuevos tokens.
    * @param _amount La cantidad de tokens a recibir.
    * @return true si pudo agregar al inversionista
@@ -228,7 +238,7 @@ contract IDMoney is StandardToken {
    * @dev Funcion que devuelve el precio de los IDM de acuerdo a la etapa del ICO.
    * @return El precio del token IDM por cada 1 ETH
    */
-  function getCurrentTokenPrice() private returns (uint256 currentPrice) {
+  function getCurrentTokenPrice() private view returns (uint256 currentPrice) {
     return tokenETHExchange;
   }
 
