@@ -5,13 +5,11 @@ pragma solidity ^0.4.18;
  * Based on code by TokenMarketNet: https://github.com/TokenMarketNet/ico/blob/master/contracts/MintableToken.sol
  * IDPAY (id based crypto currency).
  */
-
 /** 
 Stages: 
 NotICO : ICO not active
 ICO : ICO active
 */
-
 import './token/StandardToken.sol';
 
 contract IDMoney is StandardToken {
@@ -214,12 +212,12 @@ contract IDMoney is StandardToken {
   /**
    * @dev Function that saves an investor address in an array.
    *      If the investor is already there it adds the corresponding amount
-   *      It can only be executed by the owner
+   *      It is used to add an Investor (amount zero) or to add an amount of an existing investor
    * @param _to La direccion aprobada que recibira nuevos tokens.
    * @param _amount La cantidad de tokens a recibir.
    * @return true si pudo agregar al inversionista
    */
-  function addICOInvestor(address _to, uint256 _amount) public returns (bool) {
+  function addICOInvestorandAmount(address _to, uint256 _amount) private returns (bool) {
     require(_amount >= 0);  // El monto a ingresar debe ser mayor o igual a cero.
     uint256 index;
     // Revisar si esta en el vector
@@ -235,20 +233,31 @@ contract IDMoney is StandardToken {
   }
 
   /**
-   * @dev Funcion que devuelve el precio de los IDM de acuerdo a la etapa del ICO.
-   * @return El precio del token IDM por cada 1 ETH
+   * @dev Function that saves an investor address in an array. Public for the owner
+   *      If the investor is already there it adds zero to the current amount
+   * @param _to Address to add to the investor list
+   * @return true if the investor could be added
+   */
+  function addICOInvestor(address _to) onlyOwner public returns (bool) {
+    addICOInvestorandAmount(_to, 0);
+    return true;
+  }
+
+  /**
+   * @dev Function that returns IDM price according to ICO stage.
+   * @return Price of each IDM token expressed in ETH
    */
   function getCurrentTokenPrice() private view returns (uint256 currentPrice) {
     return tokenETHExchange;
   }
 
   /**
-   * @dev Funcion de busqueda binaria de una direcion.
-   * @param data Vector de direcciones.
-   * @param begin Indice de inicio de la busqueda.
-   * @param end Indice de finalizacion de la busqueda.
-   * @param value valor a buscar (direccion).
-   * @return Indice donde esta la direccion
+   * @dev Address binay search function
+   * @param data Address Array.
+   * @param begin Index that indicates begin of search.
+   * @param end Index that indicates end of search.
+   * @param value Value to look out for.
+   * @return Index where value was fount (if it was)
    */
   function findinternal(address[] data, uint begin, uint end, address value) internal returns (uint ret) {
     uint len = end - begin;
@@ -266,45 +275,43 @@ contract IDMoney is StandardToken {
   }
 
   /**
-   * @dev Funcion que usa busqueda binaria y devuelve indice
-   * @param data Vector de direcciones.
-   * @param value Valor a buscar.
-   * @return Indice donde esta la direccion
+   * @dev Function that searches for an address
+   * @param data Address Array
+   * @param value Value to search for
+   * @return Index where the value is found.
    */
   function findaddress(address[] data, address value) internal returns (uint ret) {
     return findinternal(data, 0, data.length, value);
   }
 
-
   /**
-   * @dev Funcion que revive ETH directamente pero solamente si esta en el estado correcto.
-          Chequea si el valor a depositar es mayor que 0.
-          Chequea si el monto a depositar de ETH es mayor que el minimo definido
-          Chequea si de cambio definido es mayor a 1
-          Chequea que el cap (monto mayor a recibir acumulado) sea mayor que 0
-          Chequea que el valor a pagar en esta operacion mas lo recibido no sea mayor que el cap
-          Chequea el inversionista esta en la lista de inversionistas permitidos
-   * @return True si la operacion fue correcta.
+   * @dev Function that receives ETH directly only when in ICO mode.
+   *      Checks if value to receive is more than 0.
+   *      Checks if value to receive is more than min defined
+   *      Checks if exchange rate is more than 1
+   *      Checks if caps value is more than 0
+   *      Checks that value plus total received value is no more than cap value.
+   *      Checks if investor (address) is in Investors Array
+   * @return True if operation was correct.
    */
   function () isICO payable public {
-    require(msg.value > 0);  // El monto de ETH debe ser mayor que 0
-    require(msg.value > ETH_RECEIVED_MIN);  // El monto de ETH debe ser mayor que el minimo definido
-    require(tokenETHExchange > 1); // Tiene que haber tipo de cambio y debe ser mayor que uno.
-    require(cap > 0); // Tiene que haber un cap y debe ser mayor a 0.
-    require(ethReceived + msg.value <= cap); // Revisar que no sobrepase el cap.
+    require(msg.value > 0);  // Value must be more than 0
+    require(msg.value > ETH_RECEIVED_MIN);  // Value must be more than minimum defined
+    require(tokenETHExchange > 1); // There has to be an exchange rate and it has to be more than 1
+    require(cap > 0); // There has to be a cap value and it has to be more than 0
+    require(ethReceived + msg.value <= cap); // Checks whether value to be received plus value already received is no more than cap.
     uint256 index;
-    // Revisar si esta en el vector
+    // Search for investor
     index = findaddress(ethInvestors, msg.sender);
-    // El inversionista debe esta en la lista
+    // investor must be on the list
     require(index < 999999);
-    // aca hay que tomar los eth (msg.value) y distribuirlos. address.send(msg.value)
-    // En esta version no se estan distribuyendo para ningun lugar
-    uint256 tokreceive = getCurrentTokenPrice().mul(msg.value); // Calcula el total de tokens a generar
-    doMint(owner,tokreceive); // Agrega tokens a billetera de dueno.
-    transferFrom(owner, msg.sender, tokreceive); // Envia tokens desde el dueno al inversor.
-    ethReceived = ethReceived.add(msg.value);  // Sumar los ETH en la variable de control
-    addICOInvestor(msg.sender, msg.value);  // Agregarlo en el vector de inversionistas
-    // Trigger del evento
+    // In this version we are not distibuting our ETH. It stays here. Must be distributed using wallet.
+    uint256 tokreceive = getCurrentTokenPrice().mul(msg.value); // Calculate token total to send
+    doMint(owner,tokreceive); // Creat tokens (Mint)
+    transferFrom(owner, msg.sender, tokreceive); // Add tokens to investor wallet.
+    ethReceived = ethReceived.add(msg.value);  // Add ETH to total ETH received for control purposes
+    addICOInvestorandAmount(msg.sender, msg.value);  // Add amount to Investor Array
+    // Trigger event
     AddInvestor(msg.sender, msg.value);    
   }
 
